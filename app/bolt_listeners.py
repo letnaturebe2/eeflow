@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import re
 import threading
 import time
@@ -7,7 +8,7 @@ from typing import List
 
 import requests
 from openai import APITimeoutError
-from slack_bolt import App, Ack, BoltContext, BoltResponse
+from slack_bolt import App, Ack, BoltContext, BoltResponse, Args
 from slack_bolt.request.payload_utils import is_event
 from slack_sdk.errors import SlackApiError
 from slack_sdk.web import WebClient
@@ -72,7 +73,7 @@ from app.slack_ui import (
     build_image_variations_result_blocks,
     build_image_variations_result_modal,
     build_image_variations_wip_modal,
-    build_image_variations_input_modal, build_manage_admins_modal,
+    build_image_variations_input_modal, build_manage_admins_modal, new_build_home_tab,
 )
 
 
@@ -1046,13 +1047,151 @@ def display_chat_from_scratch_result(
 
 
 def new_register_listeners(app: App):
+    app.event("app_home_opened")(ack=just_ack, lazy=[render_home_tab])
     app.action("manage_admins")(
         ack=just_ack,
         lazy=[open_manage_admins],
     )
  
-    app.view("manage_admins_modal")(
-        handle_admin_submission)
+    app.action("manage_pto_templates")(
+        ack=just_ack,
+        lazy=[handle_manage_pto_templates],
+    )
+    app.action("back_to_home")(
+        ack=just_ack,
+        lazy=[handle_back_to_home],
+    )
+    app.view("manage_admins_modal")(handle_admin_submission)
+
+
+def handle_manage_pto_templates(ack, body, client):
+    # Use templates
+
+    # Proofreading
+    pto_templates = [
+            {"name": "Full-day PTO", "status": ":white_check_mark: Enabled"},
+            {"name": "Half-day Morning PTO", "status": ":white_check_mark: Enabled"},
+            {"name": "Half-day Afternoon PTO", "status": ":x: Disabled"},
+        ]
+
+    blocks: list[dict] = [
+        # 여기에 PTO 템플릿 관리를 위한 추가 블록들을 넣습니다
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Back to Home",
+                        "emoji": True
+                    },
+                    "action_id": "back_to_home"
+                }
+            ]
+        },
+        # add divider
+        {
+            "type": "divider"
+        },
+        {
+            "type": "header",
+            "block_id": "pto_templates_header",
+            "text": {
+                "type": "plain_text",
+                "text": "PTO Templates :spiral_calendar_pad:",
+                "emoji": True
+            }
+        },
+    ]
+
+    for template in pto_templates:
+        blocks.append(
+            {
+                "type": "section",
+                "block_id": f"template_{template['name']}",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*{template['name']}*\nStatus: {template['status']}"
+                },
+                "accessory": {
+                    "type": "overflow",
+                    "action_id": f"actions_{template['name']}",
+                    "options": [
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Edit",
+                            },
+                            "value": f"edit_{template['name']}",
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Disable",
+                            },
+                            "value": f"disable_{template['name']}",
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Delete",
+                            },
+                            "value": f"delete_{template['name']}",
+                        },
+                    ],
+                },
+            }
+        )
+
+    blocks.append(
+        {
+            "type": "actions",
+            "block_id": "manage_pto_templates",
+            "elements": [
+                {
+                    "type": "button",
+                    "action_id": "manage_pto_templates",
+                    "text": {
+                        "type": "plain_text",
+                        "text": ":spiral_calendar_pad: Manage PTO Templates",
+                        "emoji": True
+                    },
+                    "style": "primary",
+                    "value": "manage_pto_templates"
+                }
+            ]
+        }
+    )
+
+    blocks.append(
+        {
+            "type": "divider"
+        }
+    )
+
+    client.views_update(
+        view_id=body["view"]["id"],
+        hash=body["view"]["hash"],
+        view={
+            "type": "home",
+            "blocks": blocks
+        }
+    )
+
+def handle_back_to_home(client, context):
+    render_home_tab(client, context)
+
+def render_home_tab(client, context):
+    already_set_api_key = os.environ["OPENAI_API_KEY"]
+    client.views_publish(
+        user_id=context.user_id,
+        view=new_build_home_tab(
+            openai_api_key=already_set_api_key,
+            context=context,
+            single_workspace_mode=True,
+        ),
+    )
 
 
 def register_listeners(app: App):
@@ -1066,10 +1205,6 @@ def register_listeners(app: App):
         ack=ack_summarize_options_modal_submission,
         lazy=[prepare_and_share_thread_summary],
     )
-
-    # Use templates
-
-    # Proofreading
     app.action("templates-proofread")(
         ack=just_ack,
         lazy=[start_proofreading],

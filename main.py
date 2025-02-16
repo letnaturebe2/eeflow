@@ -41,21 +41,6 @@ if __name__ == "__main__":
     register_listeners(app)
 
 
-
-    @app.event("app_home_opened")
-    def render_home_tab(args: Args):
-        already_set_api_key = os.environ["OPENAI_API_KEY"]
-        # response = args.client.users_info(user=args.context.user_id)
-
-        args.client.views_publish(
-            user_id=args.context.user_id,
-            view=new_build_home_tab(
-                openai_api_key=already_set_api_key,
-                context=args.context,
-                single_workspace_mode=True,
-            ),
-        )
-
     if USE_SLACK_LANGUAGE is True:
         @app.middleware
         def set_locale(
