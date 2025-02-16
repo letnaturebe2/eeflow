@@ -104,8 +104,8 @@ def build_summarize_option_modal(*, context: BoltContext, body: dict) -> dict:
                     "text": {
                         "type": "mrkdwn",
                         "text": "It appears that this app's bot user is not a member of the specified channel. "
-                        f"Could you please invite <@{context.bot_user_id}> to <#{context.channel_id}> "
-                        "to make this app functional?",
+                                f"Could you please invite <@{context.bot_user_id}> to <#{context.channel_id}> "
+                                "to make this app functional?",
                     },
                 }
             ]
@@ -209,11 +209,11 @@ DEFAULT_HOME_TAB_CONFIGURE_LABEL = "Configure"
 
 
 def new_build_home_tab(
-    *,
-    openai_api_key: Optional[str],
-    context: BoltContext,
-    message: str = DEFAULT_HOME_TAB_MESSAGE,
-    single_workspace_mode: bool = False,
+        *,
+        openai_api_key: Optional[str],
+        context: BoltContext,
+        message: str = DEFAULT_HOME_TAB_MESSAGE,
+        single_workspace_mode: bool = False,
 ) -> dict:
     blocks: list[dict] = [
         {
@@ -439,12 +439,13 @@ def new_build_home_tab(
     ]
     return {"type": "home", "blocks": blocks}
 
+
 def build_home_tab(
-    *,
-    openai_api_key: Optional[str],
-    context: BoltContext,
-    message: str = DEFAULT_HOME_TAB_MESSAGE,
-    single_workspace_mode: bool = False,
+        *,
+        openai_api_key: Optional[str],
+        context: BoltContext,
+        message: str = DEFAULT_HOME_TAB_MESSAGE,
+        single_workspace_mode: bool = False,
 ) -> dict:
     original_sentences = "\n".join(
         [
@@ -704,7 +705,7 @@ def build_proofreading_input_modal(prompt: str, tone_and_voice: Optional[str]) -
 
 
 def build_proofreading_wip_modal(
-    payload: dict, context: BoltContext, text: str
+        payload: dict, context: BoltContext, text: str
 ) -> dict:
     return {
         "type": "modal",
@@ -734,9 +735,9 @@ def build_proofreading_wip_modal(
 
 
 def _build_proofreading_result_modal(
-    *,
-    private_metadata: str,
-    blocks: list,
+        *,
+        private_metadata: str,
+        blocks: list,
 ) -> dict:
     return {
         "type": "modal",
@@ -750,10 +751,10 @@ def _build_proofreading_result_modal(
 
 
 def build_proofreading_result_modal(
-    *,
-    context: BoltContext,
-    result: str,
-    payload: dict,
+        *,
+        context: BoltContext,
+        result: str,
+        payload: dict,
 ) -> dict:
     original_text = extract_state_value(payload, "original_text").get("value")
     tone_and_voice = extract_state_value(payload, "tone_and_voice")
@@ -812,9 +813,9 @@ def build_proofreading_result_modal(
 
 
 def build_proofreading_timeout_error_modal(
-    *,
-    payload: dict,
-    text: str,
+        *,
+        payload: dict,
+        text: str,
 ) -> dict:
     blocks = [
         {
@@ -829,10 +830,10 @@ def build_proofreading_timeout_error_modal(
 
 
 def build_proofreading_error_modal(
-    *,
-    payload: dict,
-    text: str,
-    e: Exception,
+        *,
+        payload: dict,
+        text: str,
+        e: Exception,
 ) -> dict:
     blocks = [
         {
@@ -840,7 +841,7 @@ def build_proofreading_error_modal(
             "text": {
                 "type": "mrkdwn",
                 "text": f"{text}\n\n:warning: *My apologies!* "
-                f"An error occurred while generating the summary of this thread: `{e}`",
+                        f"An error occurred while generating the summary of this thread: `{e}`",
             },
         },
     ]
@@ -851,9 +852,9 @@ def build_proofreading_error_modal(
 
 
 def build_proofreading_result_no_dm_button_modal(
-    *,
-    private_metadata: str,
-    blocks: list,
+        *,
+        private_metadata: str,
+        blocks: list,
 ) -> dict:
     return {
         "type": "modal",
@@ -962,10 +963,10 @@ def build_image_generation_result_modal(blocks: list) -> dict:
 
 
 def build_image_generation_result_blocks(
-    *,
-    text: str,
-    image_url: str,
-    model: str,
+        *,
+        text: str,
+        image_url: str,
+        model: str,
 ) -> list[dict]:
     return [
         {
@@ -1060,10 +1061,10 @@ def build_image_variations_result_modal(blocks: list) -> dict:
 
 
 def build_image_variations_result_blocks(
-    *,
-    text: str,
-    generated_image_urls: List[str],
-    model: str,
+        *,
+        text: str,
+        generated_image_urls: List[str],
+        model: str,
 ) -> list[dict]:
     blocks = [
         {
@@ -1099,6 +1100,161 @@ def build_image_variations_text_modal(section_text: str) -> dict:
         ],
     }
 
+#
+#### new ui
+#
+
+def build_pto_template_blocks(pto_templates: list[dict]) -> list[dict]:
+    blocks: list[dict] = [
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Back to Home",
+                        "emoji": True
+                    },
+                    "action_id": "back_to_home"
+                }
+            ]
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "header",
+            "block_id": "pto_templates_header",
+            "text": {
+                "type": "plain_text",
+                "text": "PTO Templates :spiral_calendar_pad:",
+                "emoji": True
+            }
+        },
+    ]
+
+    for template in pto_templates:
+        blocks.append(
+            {
+                "type": "section",
+                "block_id": f"template_{template['name']}",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*{template['name']}*\nStatus: {template['status']}"
+                },
+                "accessory": {
+                    "type": "overflow",
+                    "action_id": f"actions_{template['name']}",
+                    "options": [
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Edit",
+                            },
+                            "value": f"edit_{template['name']}",
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Disable",
+                            },
+                            "value": f"disable_{template['name']}",
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Delete",
+                            },
+                            "value": f"delete_{template['name']}",
+                        },
+                    ],
+                },
+            }
+        )
+
+    blocks.append(
+        {
+            "type": "actions",
+            "block_id": "create_pto_template",
+            "elements": [
+                {
+                    "type": "button",
+                    "action_id": "create_pto_template",
+                    "text": {
+                        "type": "plain_text",
+                        "text": ":spiral_calendar_pad: Manage PTO Templates",
+                        "emoji": True
+                    },
+                    "style": "primary",
+                    "value": "create_pto_template"
+                }
+            ]
+        }
+    )
+
+    blocks.append(
+        {
+            "type": "divider"
+        }
+    )
+
+    return blocks
+
+def build_pto_template_creation_modal():
+    return {
+        "type": "modal",
+        "callback_id": "pto_template_creation",
+        "title": {
+            "type": "plain_text",
+            "text": "Create PTO Template"
+        },
+        "submit": {
+            "type": "plain_text",
+            "text": "Submit"
+        },
+        "blocks": [
+            {
+                "type": "input",
+                "block_id": "template_name",
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "name_input"
+                },
+                "label": {
+                    "type": "plain_text",
+                    "text": "Template Name"
+                }
+            },
+            {
+                "type": "input",
+                "block_id": "template_status",
+                "element": {
+                    "type": "static_select", "action_id": "status_select",
+                    "initial_option": {"text": {"type": "plain_text", "text": "Enabled"}, "value": "enabled"},
+                    "options": [
+                        {"text": {"type": "plain_text", "text": "Enabled"}, "value": "enabled"},
+                        {"text": {"type": "plain_text", "text": "Disabled"}, "value": "disabled"}
+                    ]
+                },
+                "label": {"type": "plain_text", "text": "Status"}
+            },
+            {
+                "type": "input",
+                "block_id": "template_description",
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "description_input",
+                    "multiline": True
+                },
+                "label": {
+                    "type": "plain_text",
+                    "text": "Description"
+                }
+            }
+        ]
+    }
+
 
 #
 # From-scratch modal
@@ -1126,6 +1282,7 @@ def build_manage_admins_modal(admins: list[str]) -> dict:
             }
         ]
     }
+
 
 def build_from_scratch_modal() -> dict:
     return {
@@ -1169,9 +1326,9 @@ def build_from_scratch_wip_modal(text: str) -> dict:
 
 
 def build_from_scratch_result_modal(
-    *,
-    text: str,
-    result: str,
+        *,
+        text: str,
+        result: str,
 ) -> dict:
     return _build_from_scratch_modal(f"{text}\n\n{result}")
 

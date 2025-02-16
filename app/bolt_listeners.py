@@ -74,6 +74,7 @@ from app.slack_ui import (
     build_image_variations_result_modal,
     build_image_variations_wip_modal,
     build_image_variations_input_modal, build_manage_admins_modal, new_build_home_tab,
+    build_pto_template_creation_modal, build_pto_template_blocks,
 )
 
 
@@ -1052,7 +1053,7 @@ def new_register_listeners(app: App):
         ack=just_ack,
         lazy=[open_manage_admins],
     )
- 
+
     app.action("manage_pto_templates")(
         ack=just_ack,
         lazy=[handle_manage_pto_templates],
@@ -1063,124 +1064,40 @@ def new_register_listeners(app: App):
     )
     app.view("manage_admins_modal")(handle_admin_submission)
 
+    app.action("create_pto_template")(
+        ack=just_ack,
+        lazy=[open_pto_template_creation_modal],
+    )
 
-def handle_manage_pto_templates(ack, body, client):
-    # Use templates
 
+def open_pto_template_creation_modal(ack, body, client):
+    client.views_open(
+        trigger_id=body.get("trigger_id"),
+        view=build_pto_template_creation_modal(),
+    )
+
+
+def handle_manage_pto_templates(body, client):
     # Proofreading
     pto_templates = [
-            {"name": "Full-day PTO", "status": ":white_check_mark: Enabled"},
-            {"name": "Half-day Morning PTO", "status": ":white_check_mark: Enabled"},
-            {"name": "Half-day Afternoon PTO", "status": ":x: Disabled"},
-        ]
-
-    blocks: list[dict] = [
-        # 여기에 PTO 템플릿 관리를 위한 추가 블록들을 넣습니다
-        {
-            "type": "actions",
-            "elements": [
-                {
-                    "type": "button",
-                    "text": {
-                        "type": "plain_text",
-                        "text": "Back to Home",
-                        "emoji": True
-                    },
-                    "action_id": "back_to_home"
-                }
-            ]
-        },
-        # add divider
-        {
-            "type": "divider"
-        },
-        {
-            "type": "header",
-            "block_id": "pto_templates_header",
-            "text": {
-                "type": "plain_text",
-                "text": "PTO Templates :spiral_calendar_pad:",
-                "emoji": True
-            }
-        },
+        {"name": "Full-day PTO", "status": ":white_check_mark: Enabled"},
+        {"name": "Half-day Morning PTO", "status": ":white_check_mark: Enabled"},
+        {"name": "Half-day Afternoon PTO", "status": ":x: Disabled"},
     ]
-
-    for template in pto_templates:
-        blocks.append(
-            {
-                "type": "section",
-                "block_id": f"template_{template['name']}",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f"*{template['name']}*\nStatus: {template['status']}"
-                },
-                "accessory": {
-                    "type": "overflow",
-                    "action_id": f"actions_{template['name']}",
-                    "options": [
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Edit",
-                            },
-                            "value": f"edit_{template['name']}",
-                        },
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Disable",
-                            },
-                            "value": f"disable_{template['name']}",
-                        },
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Delete",
-                            },
-                            "value": f"delete_{template['name']}",
-                        },
-                    ],
-                },
-            }
-        )
-
-    blocks.append(
-        {
-            "type": "actions",
-            "block_id": "manage_pto_templates",
-            "elements": [
-                {
-                    "type": "button",
-                    "action_id": "manage_pto_templates",
-                    "text": {
-                        "type": "plain_text",
-                        "text": ":spiral_calendar_pad: Manage PTO Templates",
-                        "emoji": True
-                    },
-                    "style": "primary",
-                    "value": "manage_pto_templates"
-                }
-            ]
-        }
-    )
-
-    blocks.append(
-        {
-            "type": "divider"
-        }
-    )
 
     client.views_update(
         view_id=body["view"]["id"],
         hash=body["view"]["hash"],
         view={
             "type": "home",
-            "blocks": blocks
+            "blocks": build_pto_template_blocks(pto_templates),
         }
     )
 
+
 def handle_back_to_home(client, context):
     render_home_tab(client, context)
+
 
 def render_home_tab(client, context):
     already_set_api_key = os.environ["OPENAI_API_KEY"]
@@ -1301,18 +1218,18 @@ def handle_admin_submission(ack, body, client, payload):
         return
 
     ack(response_action="update", view={
-            "type": "modal",
-            "title": {"type": "plain_text", "text": "Manage Admins"},
-            "blocks": [
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f":white_check_mark: Admins updated successfully!\nNew Admins: {', '.join([f'<@{user}>' for user in selected_users])}"
-                    }
+        "type": "modal",
+        "title": {"type": "plain_text", "text": "Manage Admins"},
+        "blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f":white_check_mark: Admins updated successfully!\nNew Admins: {', '.join([f'<@{user}>' for user in selected_users])}"
                 }
-            ]
-        })
+            }
+        ]
+    })
 
     client.chat_postMessage(
         channel=body["user"]["id"],
