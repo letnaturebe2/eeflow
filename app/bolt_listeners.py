@@ -9,8 +9,8 @@ import requests
 from openai import APITimeoutError
 from slack_bolt import App, Ack, BoltContext, BoltResponse
 from slack_bolt.request.payload_utils import is_event
-from slack_sdk.web import WebClient
 from slack_sdk.errors import SlackApiError
+from slack_sdk.web import WebClient
 
 from app.env import (
     OPENAI_TIMEOUT_SECONDS,
@@ -34,6 +34,7 @@ from app.openai_ops import (
     generate_proofreading_result,
     generate_chatgpt_response,
 )
+from app.sensitive_info_redaction import redact_string
 from app.slack_constants import DEFAULT_LOADING_TEXT, TIMEOUT_ERROR_MESSAGE
 from app.slack_ops import (
     find_parent_message,
@@ -44,8 +45,6 @@ from app.slack_ops import (
     build_thread_replies_as_combined_text,
     can_send_image_url_to_openai,
 )
-
-from app.sensitive_info_redaction import redact_string
 from app.slack_ui import (
     build_proofreading_input_modal,
     build_proofreading_wip_modal,
@@ -73,7 +72,7 @@ from app.slack_ui import (
     build_image_variations_result_blocks,
     build_image_variations_result_modal,
     build_image_variations_wip_modal,
-    build_image_variations_input_modal,
+    build_image_variations_input_modal, build_manage_admins_modal,
 )
 
 
@@ -92,16 +91,16 @@ def just_ack(ack: Ack):
 
 
 def respond_to_app_mention(
-    context: BoltContext,
-    payload: dict,
-    client: WebClient,
-    logger: logging.Logger,
+        context: BoltContext,
+        payload: dict,
+        client: WebClient,
+        logger: logging.Logger,
 ):
     thread_ts = payload.get("thread_ts")
     if thread_ts is not None:
         parent_message = find_parent_message(client, context.channel_id, thread_ts)
         if parent_message is not None and is_this_app_mentioned(
-            context, parent_message
+                context, parent_message
         ):
             # The message event handler will reply to this
             return
@@ -134,12 +133,12 @@ def respond_to_app_mention(
                 message_text_item = {
                     "type": "text",
                     "text": f"<@{reply['user'] if 'user' in reply else reply['username']}>: "
-                    + format_openai_message_content(reply_text, TRANSLATE_MARKDOWN),
+                            + format_openai_message_content(reply_text, TRANSLATE_MARKDOWN),
                 }
                 content = [message_text_item]
 
                 if reply.get("bot_id") is None and can_send_image_url_to_openai(
-                    context
+                        context
                 ):
                     append_image_content_if_exists(
                         bot_token=context.bot_token,
@@ -165,7 +164,7 @@ def respond_to_app_mention(
             message_text_item = {
                 "type": "text",
                 "text": f"<@{user_id}>: "
-                + format_openai_message_content(msg_text, TRANSLATE_MARKDOWN),
+                        + format_openai_message_content(msg_text, TRANSLATE_MARKDOWN),
             }
             content = [message_text_item]
 
@@ -234,17 +233,17 @@ def respond_to_app_mention(
     except (APITimeoutError, TimeoutError):
         if wip_reply is not None:
             text = (
-                (
-                    wip_reply.get("message", {}).get("text", "")
-                    if wip_reply is not None
-                    else ""
-                )
-                + "\n\n"
-                + translate(
-                    openai_api_key=openai_api_key,
-                    context=context,
-                    text=TIMEOUT_ERROR_MESSAGE,
-                )
+                    (
+                        wip_reply.get("message", {}).get("text", "")
+                        if wip_reply is not None
+                        else ""
+                    )
+                    + "\n\n"
+                    + translate(
+                openai_api_key=openai_api_key,
+                context=context,
+                text=TIMEOUT_ERROR_MESSAGE,
+            )
             )
             client.chat_update(
                 channel=context.channel_id,
@@ -253,17 +252,17 @@ def respond_to_app_mention(
             )
     except Exception as e:
         text = (
-            (
-                wip_reply.get("message", {}).get("text", "")
-                if wip_reply is not None
-                else ""
-            )
-            + "\n\n"
-            + translate(
-                openai_api_key=openai_api_key,
-                context=context,
-                text=f":warning: Failed to start a conversation with ChatGPT: {e}",
-            )
+                (
+                    wip_reply.get("message", {}).get("text", "")
+                    if wip_reply is not None
+                    else ""
+                )
+                + "\n\n"
+                + translate(
+            openai_api_key=openai_api_key,
+            context=context,
+            text=f":warning: Failed to start a conversation with ChatGPT: {e}",
+        )
         )
         logger.exception(text, e)
         if wip_reply is not None:
@@ -275,10 +274,10 @@ def respond_to_app_mention(
 
 
 def respond_to_new_message(
-    context: BoltContext,
-    payload: dict,
-    client: WebClient,
-    logger: logging.Logger,
+        context: BoltContext,
+        payload: dict,
+        client: WebClient,
+        logger: logging.Logger,
 ):
     if payload.get("bot_id") is not None and payload.get("bot_id") != context.bot_id:
         # Skip a new message by a different app
@@ -396,7 +395,7 @@ def respond_to_new_message(
                 {
                     "type": "text",
                     "text": f"<@{msg_user_id}>: "
-                    + format_openai_message_content(reply_text, TRANSLATE_MARKDOWN),
+                            + format_openai_message_content(reply_text, TRANSLATE_MARKDOWN),
                 }
             ]
             if reply.get("bot_id") is None and can_send_image_url_to_openai(context):
@@ -467,8 +466,8 @@ def respond_to_new_message(
                 limit=1000,
             )
             if (
-                latest_replies.get("messages", [])[-1]["ts"]
-                != wip_reply["message"]["ts"]
+                    latest_replies.get("messages", [])[-1]["ts"]
+                    != wip_reply["message"]["ts"]
             ):
                 # Since a new reply will come soon, this app abandons this reply
                 client.chat_delete(
@@ -491,17 +490,17 @@ def respond_to_new_message(
     except (APITimeoutError, TimeoutError):
         if wip_reply is not None:
             text = (
-                (
-                    wip_reply.get("message", {}).get("text", "")
-                    if wip_reply is not None
-                    else ""
-                )
-                + "\n\n"
-                + translate(
-                    openai_api_key=openai_api_key,
-                    context=context,
-                    text=TIMEOUT_ERROR_MESSAGE,
-                )
+                    (
+                        wip_reply.get("message", {}).get("text", "")
+                        if wip_reply is not None
+                        else ""
+                    )
+                    + "\n\n"
+                    + translate(
+                openai_api_key=openai_api_key,
+                context=context,
+                text=TIMEOUT_ERROR_MESSAGE,
+            )
             )
             client.chat_update(
                 channel=context.channel_id,
@@ -510,13 +509,13 @@ def respond_to_new_message(
             )
     except Exception as e:
         text = (
-            (
-                wip_reply.get("message", {}).get("text", "")
-                if wip_reply is not None
-                else ""
-            )
-            + "\n\n"
-            + f":warning: Failed to reply: {e}"
+                (
+                    wip_reply.get("message", {}).get("text", "")
+                    if wip_reply is not None
+                    else ""
+                )
+                + "\n\n"
+                + f":warning: Failed to reply: {e}"
         )
         logger.exception(text, e)
         if wip_reply is not None:
@@ -533,10 +532,10 @@ def respond_to_new_message(
 
 
 def show_summarize_option_modal(
-    ack: Ack,
-    client: WebClient,
-    body: dict,
-    context: BoltContext,
+        ack: Ack,
+        client: WebClient,
+        body: dict,
+        context: BoltContext,
 ):
     client.views_open(
         trigger_id=body.get("trigger_id"),
@@ -546,8 +545,8 @@ def show_summarize_option_modal(
 
 
 def ack_summarize_options_modal_submission(
-    ack: Ack,
-    payload: dict,
+        ack: Ack,
+        payload: dict,
 ):
     where_to_display = (
         extract_state_value(payload, "where-to-share-summary")
@@ -561,10 +560,10 @@ def ack_summarize_options_modal_submission(
 
 
 def prepare_and_share_thread_summary(
-    payload: dict,
-    client: WebClient,
-    context: BoltContext,
-    logger: logging.Logger,
+        payload: dict,
+        client: WebClient,
+        context: BoltContext,
+        logger: logging.Logger,
 ):
     try:
         openai_api_key = context.get("OPENAI_API_KEY")
@@ -635,9 +634,9 @@ def start_proofreading(client: WebClient, body: dict, payload: dict):
 
 
 def ack_proofreading_modal_submission(
-    ack: Ack,
-    payload: dict,
-    context: BoltContext,
+        ack: Ack,
+        payload: dict,
+        context: BoltContext,
 ):
     original_text = extract_state_value(payload, "original_text").get("value")
     text = "\n".join(map(lambda s: f">{s}", original_text.split("\n")))
@@ -650,10 +649,10 @@ def ack_proofreading_modal_submission(
 
 
 def display_proofreading_result(
-    client: WebClient,
-    context: BoltContext,
-    logger: logging.Logger,
-    payload: dict,
+        client: WebClient,
+        context: BoltContext,
+        logger: logging.Logger,
+        payload: dict,
 ):
     text = ""
     try:
@@ -705,10 +704,10 @@ def display_proofreading_modal_again(ack: Ack, payload):
 
 
 def send_proofreading_result_in_dm(
-    body: dict,
-    client: WebClient,
-    context: BoltContext,
-    logger: logging.Logger,
+        body: dict,
+        client: WebClient,
+        context: BoltContext,
+        logger: logging.Logger,
 ):
     view = body["view"]
     view_blocks = view["blocks"]
@@ -751,10 +750,10 @@ def ack_image_generation_modal_submission(ack: Ack):
 
 
 def display_image_generation_result(
-    client: WebClient,
-    context: BoltContext,
-    logger: logging.Logger,
-    payload: dict,
+        client: WebClient,
+        context: BoltContext,
+        logger: logging.Logger,
+        payload: dict,
 ):
     text = ""
     try:
@@ -866,10 +865,10 @@ def ack_image_variations_modal_submission(ack: Ack):
 
 
 def display_image_variations_result(
-    client: WebClient,
-    context: BoltContext,
-    logger: logging.Logger,
-    payload: dict,
+        client: WebClient,
+        context: BoltContext,
+        logger: logging.Logger,
+        payload: dict,
 ):
     try:
         # https://platform.openai.com/docs/guides/images/variations-dall-e-2-only
@@ -882,7 +881,6 @@ def display_image_variations_result(
         file_uploads: List[dict] = []
         try:
             for image_file in image_files:
-
                 def generate_variations():
                     uploaded_image_url = image_file["url_private"]
                     image_data: bytes = requests.get(
@@ -1005,8 +1003,8 @@ def start_chat_from_scratch(client: WebClient, body: dict):
 
 
 def ack_chat_from_scratch_modal_submission(
-    ack: Ack,
-    payload: dict,
+        ack: Ack,
+        payload: dict,
 ):
     prompt = extract_state_value(payload, "prompt").get("value")
     text = "\n".join(map(lambda s: f">{s}", prompt.split("\n")))
@@ -1015,10 +1013,10 @@ def ack_chat_from_scratch_modal_submission(
 
 
 def display_chat_from_scratch_result(
-    client: WebClient,
-    context: BoltContext,
-    logger: logging.Logger,
-    payload: dict,
+        client: WebClient,
+        context: BoltContext,
+        logger: logging.Logger,
+        payload: dict,
 ):
     text = ""
     openai_api_key = context.get("OPENAI_API_KEY")
@@ -1047,8 +1045,17 @@ def display_chat_from_scratch_result(
         )
 
 
-def register_listeners(app: App):
+def new_register_listeners(app: App):
+    app.action("manage_admins")(
+        ack=just_ack,
+        lazy=[open_manage_admins],
+    )
+ 
+    app.view("manage_admins_modal")(
+        handle_admin_submission)
 
+
+def register_listeners(app: App):
     # Chat with the bot
     app.event("app_mention")(ack=just_ack, lazy=[respond_to_app_mention])
     app.event("message")(ack=just_ack, lazy=[respond_to_new_message])
@@ -1113,15 +1120,15 @@ MESSAGE_SUBTYPES_TO_SKIP = ["message_changed", "message_deleted"]
 # this before_authorize function skips message changed/deleted events.
 # Especially, "message_changed" events can be triggered many times when the app rapidly updates its reply.
 def before_authorize(
-    body: dict,
-    payload: dict,
-    logger: logging.Logger,
-    next_,
+        body: dict,
+        payload: dict,
+        logger: logging.Logger,
+        next_,
 ):
     if (
-        is_event(body)
-        and payload.get("type") == "message"
-        and payload.get("subtype") in MESSAGE_SUBTYPES_TO_SKIP
+            is_event(body)
+            and payload.get("type") == "message"
+            and payload.get("subtype") in MESSAGE_SUBTYPES_TO_SKIP
     ):
         logger.debug(
             "Skipped the following middleware and listeners "
@@ -1129,3 +1136,50 @@ def before_authorize(
         )
         return BoltResponse(status=200, body="")
     next_()
+
+
+#
+# New custom listeners
+#
+def open_manage_admins(client: WebClient, body: dict, payload: dict):
+    client.views_open(
+        trigger_id=body.get("trigger_id"),
+        view=build_manage_admins_modal([]),
+    )
+
+
+def handle_admin_submission(ack, body, client, payload):
+    selected_users = body["view"]["state"]["values"]["select_admins_block"]["select_admins"]["selected_users"]
+
+    if not selected_users:
+        view = build_manage_admins_modal([])
+        view["blocks"].append(
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": ":warning: Please select at least one user as an admin."
+                }
+            }
+        )
+        ack(response_action="update", view=view)
+        return
+
+    ack(response_action="update", view={
+            "type": "modal",
+            "title": {"type": "plain_text", "text": "Manage Admins"},
+            "blocks": [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f":white_check_mark: Admins updated successfully!\nNew Admins: {', '.join([f'<@{user}>' for user in selected_users])}"
+                    }
+                }
+            ]
+        })
+
+    client.chat_postMessage(
+        channel=body["user"]["id"],
+        text=f"✅ Admins updated successfully!\nNew Admins: {', '.join([f'<@{user}>' for user in selected_users])}"
+    )

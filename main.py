@@ -2,11 +2,11 @@ from dotenv import load_dotenv
 import logging
 import os
 
-from slack_bolt import App, BoltContext
+from slack_bolt import App, BoltContext, Args
 from slack_sdk.web import WebClient
 from slack_sdk.http_retry.builtin_handlers import RateLimitErrorRetryHandler
 
-from app.bolt_listeners import before_authorize, register_listeners
+from app.bolt_listeners import before_authorize, register_listeners, just_ack, new_register_listeners
 from app.env import (
     USE_SLACK_LANGUAGE,
     SLACK_APP_LOG_LEVEL,
@@ -20,7 +20,7 @@ from app.env import (
     OPENAI_ORG_ID,
     OPENAI_IMAGE_GENERATION_MODEL,
 )
-from app.slack_ui import build_home_tab
+from app.slack_ui import build_home_tab, new_build_home_tab, build_manage_admins_modal, build_summarize_wip_modal
 
 load_dotenv()
 
@@ -34,24 +34,29 @@ if __name__ == "__main__":
         before_authorize=before_authorize,
         process_before_response=True,
     )
-    app.client.retry_handlers.append(RateLimitErrorRetryHandler(max_retry_count=2))
 
+    app.client.retry_handlers.append(RateLimitErrorRetryHandler(max_retry_count=0))
+
+    new_register_listeners(app)
     register_listeners(app)
 
+
+
     @app.event("app_home_opened")
-    def render_home_tab(client: WebClient, context: BoltContext):
+    def render_home_tab(args: Args):
         already_set_api_key = os.environ["OPENAI_API_KEY"]
-        client.views_publish(
-            user_id=context.user_id,
-            view=build_home_tab(
+        # response = args.client.users_info(user=args.context.user_id)
+
+        args.client.views_publish(
+            user_id=args.context.user_id,
+            view=new_build_home_tab(
                 openai_api_key=already_set_api_key,
-                context=context,
+                context=args.context,
                 single_workspace_mode=True,
             ),
         )
 
     if USE_SLACK_LANGUAGE is True:
-
         @app.middleware
         def set_locale(
             context: BoltContext,
