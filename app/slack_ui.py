@@ -1100,6 +1100,7 @@ def build_image_variations_text_modal(section_text: str) -> dict:
         ],
     }
 
+
 #
 #### new ui
 #
@@ -1141,37 +1142,92 @@ def build_pto_template_blocks(pto_templates: list[dict]) -> list[dict]:
                 "block_id": f"template_{template['name']}",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f"*{template['name']}*\nStatus: {template['status']}"
-                },
-                "accessory": {
-                    "type": "overflow",
-                    "action_id": f"actions_{template['name']}",
-                    "options": [
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Edit",
-                            },
-                            "value": f"edit_{template['name']}",
-                        },
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Disable",
-                            },
-                            "value": f"disable_{template['name']}",
-                        },
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Delete",
-                            },
-                            "value": f"delete_{template['name']}",
-                        },
-                    ],
-                },
+                    "text": f"*{template['name']}*\n>Status: {template['status']}\n>Description:\n>{template.get('description', 'No description provided.')}"}
             }
         )
+        blocks.append({
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": ":pencil2: Edit",
+                        "emoji": True
+                    },
+                    "value": f"edit_{template['name']}",
+                    "action_id": f"edit_{template['name']}"
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": f":white_check_mark: Enable",
+                        # "text": f":no_entry: Disable",
+                        "emoji": True
+                    },
+                    "value": f"disable_{template['name']}",
+                    "action_id": f"disable_{template['name']}"
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": ":x: Delete",
+                        "emoji": True
+                    },
+                    "style": "danger",
+                    "value": f"delete_{template['name']}",
+                    "action_id": f"delete_{template['name']}"
+                }
+            ]
+        })
+        # blocks.append(
+        #     {
+        #         "type": "section",
+        #         "block_id": f"template_{template['name']}",
+        #         "text": {
+        #             "type": "mrkdwn",
+        #             "text": f"*{template['name']}*\nStatus: {template['status']}"
+        #         },
+        #         "accessory": {
+        #             "type": "actions",
+        #             "elements": [
+        #                 {
+        #                     "type": "button",
+        #                     "text": {
+        #                         "type": "plain_text",
+        #                         "text": ":pencil2: Edit",
+        #                         "emoji": True
+        #                     },
+        #                     "value": f"edit_{template['name']}",
+        #                     "action_id": f"edit_{template['name']}"
+        #                 },
+        #                 {
+        #                     "type": "button",
+        #                     "text": {
+        #                         "type": "plain_text",
+        #                         "text": ":no_entry: Disable",
+        #                         "emoji": True
+        #                     },
+        #                     "value": f"disable_{template['name']}",
+        #                     "action_id": f"disable_{template['name']}"
+        #                 },
+        #                 {
+        #                     "type": "button",
+        #                     "text": {
+        #                         "type": "plain_text",
+        #                         "text": ":x: Delete",
+        #                         "emoji": True
+        #                     },
+        #                     "style": "danger",
+        #                     "value": f"delete_{template['name']}",
+        #                     "action_id": f"delete_{template['name']}"
+        #                 }
+        #             ]
+        #         }
+        #     }
+        # )
 
     blocks.append(
         {
@@ -1228,6 +1284,24 @@ def build_pto_template_creation_modal():
             },
             {
                 "type": "input",
+                "block_id": "template_markdown",
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "markdown_input",
+                    "multiline": True,
+                    "initial_value": (
+                        "📅 Date Range: MM/DD/YYYY - MM/DD/YYYY\n"
+                        "📝 Reason: \n\n"
+                        "Please provide the date range and reason for your PTO request."
+                    )
+                },
+                "label": {
+                    "type": "plain_text",
+                    "text": "Markdown Template"
+                }
+            },
+            {
+                "type": "input",
                 "block_id": "template_status",
                 "element": {
                     "type": "static_select", "action_id": "status_select",
@@ -1251,6 +1325,29 @@ def build_pto_template_creation_modal():
                     "type": "plain_text",
                     "text": "Description"
                 }
+            }
+        ]
+    }
+
+
+def build_pto_request_modal(template: str) -> dict:
+    return {
+        "type": "modal",
+        "callback_id": "pto_request",
+        "title": {"type": "plain_text", "text": "Submit PTO Request"},
+        "submit": {"type": "plain_text", "text": "Submit"},
+        "close": {"type": "plain_text", "text": "Close"},
+        "blocks": [
+            {
+                "type": "input",
+                "block_id": "pto_request_details",
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "details_input",
+                    "multiline": True,
+                    "initial_value": template
+                },
+                "label": {"type": "plain_text", "text": "PTO Request Details"}
             }
         ]
     }

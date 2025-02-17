@@ -1080,9 +1080,11 @@ def open_pto_template_creation_modal(ack, body, client):
 def handle_manage_pto_templates(body, client):
     # Proofreading
     pto_templates = [
-        {"name": "Full-day PTO", "status": ":white_check_mark: Enabled"},
-        {"name": "Half-day Morning PTO", "status": ":white_check_mark: Enabled"},
-        {"name": "Half-day Afternoon PTO", "status": ":x: Disabled"},
+        {"name": "Full-day PTO", "status": ":white_check_mark: Enabled", "description": "Take a full day off"},
+        {"name": "Half-day Morning PTO", "status": ":white_check_mark: Enabled",
+         "description": "Take a half day off in the morning"},
+        {"name": "Half-day Afternoon PTO", "status": ":x: Disabled",
+         "description": "Take a half day off in the afternoon, starting after lunch and ending at the close of business hours"},
     ]
 
     client.views_update(
