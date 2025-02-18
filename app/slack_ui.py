@@ -1155,19 +1155,18 @@ def build_pto_template_blocks(pto_templates: list[dict]) -> list[dict]:
                         "text": ":pencil2: Edit",
                         "emoji": True
                     },
-                    "value": f"edit_{template['name']}",
-                    "action_id": f"edit_{template['name']}"
+                    "value": template['name'],  # 템플릿 이름을 value에 저장
+                    "action_id": "edit_template"  # action_id는 고정
                 },
                 {
                     "type": "button",
                     "text": {
                         "type": "plain_text",
-                        "text": f":white_check_mark: Enable",
-                        # "text": f":no_entry: Disable",
+                        "text": ":white_check_mark: Enable",
                         "emoji": True
                     },
-                    "value": f"disable_{template['name']}",
-                    "action_id": f"disable_{template['name']}"
+                    "value": template['name'],  # value로 템플릿 구분
+                    "action_id": "toggle_template"  # enable/disable을 같은 핸들러에서 처리 가능
                 },
                 {
                     "type": "button",
@@ -1177,57 +1176,11 @@ def build_pto_template_blocks(pto_templates: list[dict]) -> list[dict]:
                         "emoji": True
                     },
                     "style": "danger",
-                    "value": f"delete_{template['name']}",
-                    "action_id": f"delete_{template['name']}"
+                    "value": template['name'],  # 삭제할 템플릿을 구분하기 위해 value 사용
+                    "action_id": "delete_template"
                 }
             ]
         })
-        # blocks.append(
-        #     {
-        #         "type": "section",
-        #         "block_id": f"template_{template['name']}",
-        #         "text": {
-        #             "type": "mrkdwn",
-        #             "text": f"*{template['name']}*\nStatus: {template['status']}"
-        #         },
-        #         "accessory": {
-        #             "type": "actions",
-        #             "elements": [
-        #                 {
-        #                     "type": "button",
-        #                     "text": {
-        #                         "type": "plain_text",
-        #                         "text": ":pencil2: Edit",
-        #                         "emoji": True
-        #                     },
-        #                     "value": f"edit_{template['name']}",
-        #                     "action_id": f"edit_{template['name']}"
-        #                 },
-        #                 {
-        #                     "type": "button",
-        #                     "text": {
-        #                         "type": "plain_text",
-        #                         "text": ":no_entry: Disable",
-        #                         "emoji": True
-        #                     },
-        #                     "value": f"disable_{template['name']}",
-        #                     "action_id": f"disable_{template['name']}"
-        #                 },
-        #                 {
-        #                     "type": "button",
-        #                     "text": {
-        #                         "type": "plain_text",
-        #                         "text": ":x: Delete",
-        #                         "emoji": True
-        #                     },
-        #                     "style": "danger",
-        #                     "value": f"delete_{template['name']}",
-        #                     "action_id": f"delete_{template['name']}"
-        #                 }
-        #             ]
-        #         }
-        #     }
-        # )
 
     blocks.append(
         {
