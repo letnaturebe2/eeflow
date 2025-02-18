@@ -1142,45 +1142,32 @@ def build_pto_template_blocks(pto_templates: list[dict]) -> list[dict]:
                 "block_id": f"template_{template['name']}",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f"*{template['name']}*\n>Status: {template['status']}\n>Description:\n>{template.get('description', 'No description provided.')}"}
+                    "text": f"*{template['name']}*\n>Status: {template['status']}\n>Description:\n>{template.get('description', 'No description provided.')}"
+                },
+                "accessory": {
+                    "type": "overflow",
+                    "action_id": f"template_{template['name']}_overflow",
+                    "options": [
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": ":pencil2: Edit",
+                                "emoji": True
+                            },
+                            "value": f"edit_{template['name']}"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": ":x: Delete",
+                                "emoji": True
+                            },
+                            "value": f"delete_{template['name']}"
+                        }
+                    ]
+                }
             }
         )
-        blocks.append({
-            "type": "actions",
-            "elements": [
-                {
-                    "type": "button",
-                    "text": {
-                        "type": "plain_text",
-                        "text": ":pencil2: Edit",
-                        "emoji": True
-                    },
-                    "value": template['name'],  # 템플릿 이름을 value에 저장
-                    "action_id": "edit_template"  # action_id는 고정
-                },
-                {
-                    "type": "button",
-                    "text": {
-                        "type": "plain_text",
-                        "text": ":white_check_mark: Enable",
-                        "emoji": True
-                    },
-                    "value": template['name'],  # value로 템플릿 구분
-                    "action_id": "toggle_template"  # enable/disable을 같은 핸들러에서 처리 가능
-                },
-                {
-                    "type": "button",
-                    "text": {
-                        "type": "plain_text",
-                        "text": ":x: Delete",
-                        "emoji": True
-                    },
-                    "style": "danger",
-                    "value": template['name'],  # 삭제할 템플릿을 구분하기 위해 value 사용
-                    "action_id": "delete_template"
-                }
-            ]
-        })
 
     blocks.append(
         {
@@ -1209,6 +1196,7 @@ def build_pto_template_blocks(pto_templates: list[dict]) -> list[dict]:
     )
 
     return blocks
+
 
 def build_pto_template_creation_modal():
     return {
